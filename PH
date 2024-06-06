@@ -1,0 +1,40 @@
+import time
+import RPi.GPIO as GPIO
+
+# Étape 1: Initialiser la connexion avec le capteur pH
+GPIO.setmode(GPIO.BOARD)
+ph_pin = 7  # Ajustez selon votre configuration
+
+# Étape 2: Lecture de la valeur analogique du capteur de pH
+def read_ph_value():
+    GPIO.setup(ph_pin, GPIO.OUT)
+    GPIO.output(ph_pin, GPIO.LOW)
+    time.sleep(0.1)  # Temps de repos pour permettre au capteur de stabiliser
+    GPIO.setup(ph_pin, GPIO.IN)
+    adc_value = 0
+    for i in range(24):  # Nombre de conversions ADC
+        GPIO.setup(ph_pin, GPIO.OUT)
+        GPIO.output(ph_pin, GPIO.LOW)
+        time.sleep(0.001)  # Temps d'attente pour la conversion ADC
+        GPIO.setup(ph_pin, GPIO.IN)
+        adc_value <<= 1
+        if GPIO.input(ph_pin) == GPIO.HIGH:
+            adc_value |= 0x01
+    return adc_value
+
+# Étape 3: Convertir la valeur ADC en valeur de pH
+def convert_to_ph(adc_value):
+    calibration_value = 20.24 - 0.7  # Ajustez selon votre capteur
+    ph_value = 7 - (adc_value * 5.0 / 1023)  # Exemple de formule pour un capteur linéaire
+    return ph_value
+
+# Étape 4: Afficher la valeur de pH
+try:
+    while True:
+        adc_value = read_ph_value()
+        ph_value = convert_to_ph(adc_value)
+        print("Valeur de pH:", ph_value)
+        time.sleep(1)  # Délai entre mesures
+
+except KeyboardInterrupt:
+    GPIO.cleanup()
